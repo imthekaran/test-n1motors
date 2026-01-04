@@ -2,25 +2,14 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-
-// Helper function to create URL-safe slugs
-function createSlug(text) {
-  return text
-    .toLowerCase()
-    .replace(/\s+/g, '-')           // Replace spaces with dashes
-    .replace(/[^\w-]/g, '');         // Remove special characters except dashes
-}
+import VehicleImageCard from '@/app/components/VehicleImageCard';
 
 export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState([]);
   const [filteredVehicles, setFilteredVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterManufacturer, setFilterManufacturer] = useState('');
   const [sortBy, setSortBy] = useState('year');
-  const carouselRef = useRef(null);
 
   useEffect(() => {
     async function fetchVehicles() {
@@ -44,21 +33,6 @@ export default function VehiclesPage() {
   useEffect(() => {
     let filtered = vehicles;
 
-    // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (v) =>
-          v.manufacturer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          v.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          v.stockNo.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply manufacturer filter
-    if (filterManufacturer) {
-      filtered = filtered.filter((v) => v.manufacturer === filterManufacturer);
-    }
-
     // Apply sorting
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -74,9 +48,10 @@ export default function VehiclesPage() {
     });
 
     setFilteredVehicles(filtered);
-  }, [searchQuery, filterManufacturer, sortBy, vehicles]);
+  }, [sortBy, vehicles]);
 
   const manufacturers = [...new Set(vehicles.map((v) => v.manufacturer))].sort();
+  const carouselRef = useRef(null);
 
   const scroll = (direction) => {
     if (carouselRef.current) {
@@ -88,23 +63,44 @@ export default function VehiclesPage() {
     }
   };
 
-  if (loading) return <div className="text-center py-12 text-gray-600">Loading vehicles...</div>;
-  if (error) return <div className="text-center py-12 px-4 bg-red-50 text-red-700 rounded-lg font-medium">Error: {error}</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-white py-12 px-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+          <p className="mt-4 text-gray-600">Loading vehicles...</p>
+        </div>
+      </div>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="min-h-screen bg-white py-12 px-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-red-50 border-l-4 border-red-600 p-6 rounded-lg">
+          <h3 className="text-red-800 font-bold mb-2">Error Loading Vehicles</h3>
+          <p className="text-red-700">{error}</p>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-red-600 to-red-700 text-white py-12 px-4">
+      <section className="bg-gradient-to-r from-red-600 to-red-700 text-white py-12 sm:py-16 px-4">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-2">Discover Your Perfect Vehicle</h1>
-          <p className="text-red-100 text-lg">Browse our exclusive collection of premium vehicles</p>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">Browse Our Vehicles</h1>
+          <p className="text-lg sm:text-xl text-red-100 max-w-2xl">
+            Discover quality vehicles from Number1 Motors. Find your perfect match today.
+          </p>
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Browse by Manufacturer - Carousel */}
-        <div className="mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">Browse by Manufacturer</h2>
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
+        {/* Browse by Brand - Carousel */}
+        <section className="mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Browse by Brand</h2>
           <div>
             {/* Carousel Container */}
             <div 
@@ -113,7 +109,7 @@ export default function VehiclesPage() {
               style={{ scrollBehavior: 'smooth' }}
             >
               {manufacturers.map((mfg) => {
-                const mfgSlug = createSlug(mfg);
+                const mfgSlug = mfg.toLowerCase().replace(/\s+/g, '-');
                 const mfgVehicles = vehicles.filter((v) => v.manufacturer === mfg);
                 return (
                   <Link key={mfg} href={`/vehicles/${mfgSlug}`}>
@@ -154,122 +150,82 @@ export default function VehiclesPage() {
               </div>
             )}
           </div>
-        </div>
-        
-        {/* Filter & Search Section */}
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 sm:p-8 mb-8">
-          <div className="mb-6">
-            <label className="block text-sm font-bold text-gray-900 mb-2">Search Vehicle</label>
-            <input
-              type="text"
-              placeholder="Search by manufacturer, model, or stock number..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 bg-white border-2 border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-200 transition-all duration-300"
-            />
+        </section>
+
+        {/* Results Count & Sort Section */}
+        <div className="mb-8 sm:mb-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Results Count */}
+          <div className="text-sm sm:text-base text-gray-600 order-2 sm:order-1">
+            Showing <span className="font-bold text-gray-900">{filteredVehicles.length}</span> of <span className="font-bold text-gray-900">{vehicles.length}</span> vehicles
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-2">Filter by Manufacturer</label>
-              <select
-                value={filterManufacturer}
-                onChange={(e) => setFilterManufacturer(e.target.value)}
-                className="w-full px-4 py-3 bg-white border-2 border-gray-300 rounded-lg text-gray-900 cursor-pointer focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-200 transition-all duration-300 font-medium"
-              >
-                <option value="">All Manufacturers</option>
-                {manufacturers.map((mfg) => (
-                  <option key={mfg} value={mfg}>
-                    {mfg}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-2">Sort By</label>
-              <select 
-                value={sortBy} 
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-4 py-3 bg-white border-2 border-gray-300 rounded-lg text-gray-900 cursor-pointer focus:outline-none focus:border-red-600 focus:ring-2 focus:ring-red-200 transition-all duration-300 font-medium"
-              >
-                <option value="year">Sort by Year (Newest)</option>
-                <option value="mileage">Sort by Mileage (Lowest)</option>
-                <option value="price">Sort by Price (Highest)</option>
-              </select>
-            </div>
+          {/* Sort Section */}
+          <div className="flex items-center gap-3 order-1 sm:order-2">
+            <label htmlFor="sort" className="font-medium text-gray-900 whitespace-nowrap">Sort by:</label>
+            <select 
+              id="sort"
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+              className="flex-1 sm:flex-none px-4 py-2 sm:py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 text-sm sm:text-base cursor-pointer transition-colors"
+              aria-label="Sort vehicles"
+            >
+              <option value="year">Newest First</option>
+              <option value="mileage">Lowest Mileage</option>
+              <option value="price">Price</option>
+            </select>
           </div>
         </div>
 
-        <div className="text-gray-700 mb-8 text-sm font-medium">
-          Showing <span className="text-red-600 font-bold">{filteredVehicles.length}</span> of <span className="text-red-600 font-bold">{vehicles.length}</span> vehicles
-        </div>
-
+        {/* Vehicles Grid */}
         {filteredVehicles.length === 0 ? (
-          <div className="text-center py-16 px-4 bg-gray-50 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg text-lg">
-            No vehicles found matching your criteria.
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <p className="text-lg text-gray-600">No vehicles found matching your criteria.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredVehicles.map((vehicle) => {
-              const manufacturerSlug = createSlug(vehicle.manufacturer);
-              const modelSlug = createSlug(vehicle.model);
+              const manufacturerSlug = vehicle.manufacturer.toLowerCase().replace(/\s+/g, '-');
+              const modelSlug = vehicle.model.toLowerCase().replace(/\s+/g, '-');
               return (
-              <Link key={vehicle.id} href={`/vehicles/${manufacturerSlug}/${modelSlug}/${vehicle.id}`}>
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-red-600 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer h-full flex flex-col group">
-                  {/* Vehicle Image */}
-                  <div className="relative w-full h-48 bg-gray-100 overflow-hidden">
-                    <Image
+                <Link key={vehicle.id} href={`/vehicles/${manufacturerSlug}/${modelSlug}/${vehicle.id}`}>
+                  <article className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 group h-full flex flex-col">
+                    {/* Image */}
+                    <VehicleImageCard
                       src={vehicle.thumbnailImage}
                       alt={`${vehicle.year} ${vehicle.manufacturer} ${vehicle.model}`}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23F3F4F6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" font-size="24" fill="%239CA3AF" text-anchor="middle" dominant-baseline="middle"%3ENo Image Available%3C/text%3E%3C/svg%3E';
-                      }}
+                      vehicleData={vehicle}
                     />
-                  </div>
 
-                  <div className="p-6 flex-1 flex flex-col">
-                    <div className="flex justify-between items-start gap-4 mb-4">
-                      <h2 className="text-lg font-bold text-gray-900 group-hover:text-red-600 transition-colors">
-                        {vehicle.year} {vehicle.manufacturer} {vehicle.model}
-                      </h2>
-                      {vehicle.status && (
-                        <span className="inline-block px-3 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-bold whitespace-nowrap border border-red-300">
-                          {vehicle.status}
-                        </span>
+                    {/* Content */}
+                    <div className="p-4 sm:p-5 flex-1 flex flex-col">
+                      <div className="flex justify-between items-start gap-2 mb-3">
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-red-600 transition-colors flex-1">
+                          {vehicle.year} {vehicle.manufacturer} {vehicle.model}
+                        </h3>
+                        {vehicle.status && (
+                          <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full whitespace-nowrap">
+                            {vehicle.status}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex-1 mb-4 space-y-2 text-sm text-gray-600">
+                        <p><span className="font-semibold text-gray-900">Stock:</span> {vehicle.stockNo}</p>
+                        <p><span className="font-semibold text-gray-900">Style:</span> {vehicle.bodyStyle}</p>
+                        <p><span className="font-semibold text-gray-900">Engine:</span> {vehicle.engineSize}cc {vehicle.fuelType}</p>
+                        <p><span className="font-semibold text-gray-900">Mileage:</span> {vehicle.mileage} {vehicle.mileageUnit}</p>
+                      </div>
+
+                      {vehicle.price && (
+                        <div className="text-2xl font-bold text-red-600 mb-3">{vehicle.price}</div>
                       )}
-                    </div>
 
-                    <div className="flex-1 mb-4 space-y-2">
-                      <p className="text-gray-600 text-sm">
-                        <span className="text-gray-500">Stock:</span> <span className="font-semibold text-gray-900">{vehicle.stockNo}</span>
-                      </p>
-                      <p className="text-gray-600 text-sm">
-                        <span className="text-gray-500">Style:</span> <span className="font-semibold text-gray-900">{vehicle.bodyStyle}</span>
-                      </p>
-                      <p className="text-gray-600 text-sm">
-                        <span className="text-gray-500">Engine:</span> <span className="font-semibold text-gray-900">{vehicle.engineSize}cc {vehicle.fuelType}</span>
-                      </p>
-                      <p className="text-gray-600 text-sm">
-                        <span className="text-gray-500">Trans:</span> <span className="font-semibold text-gray-900">{vehicle.transmission}</span>
-                      </p>
-                      <p className="text-gray-600 text-sm">
-                        <span className="text-gray-500">Mileage:</span> <span className="font-semibold text-gray-900">{vehicle.mileage} {vehicle.mileageUnit}</span>
-                      </p>
+                      <div className="text-center font-bold text-red-600 group-hover:text-red-700">
+                        View Details →
+                      </div>
                     </div>
-
-                    {vehicle.price && (
-                      <div className="text-2xl font-bold text-red-600 mb-4">{vehicle.price}</div>
-                    )}
-
-                    <div className="text-center text-red-600 font-bold pt-4 border-t border-gray-200 group-hover:text-red-700 transition-colors">
-                      View Details →
-                    </div>
-                  </div>
-                </div>
-              </Link>
+                  </article>
+                </Link>
               );
             })}
           </div>
