@@ -143,7 +143,7 @@ export default async function VehicleDetailPage({ params }) {
 
         {/* Image Gallery */}
         <div className="mb-8 sm:mb-12">
-          <ImageGallery images={vehicle.images} vehicleName={`${vehicle.year} ${vehicle.manufacturer} ${vehicle.model}`} />
+          <ImageGallery images={vehicle.images} vehicleName={`${vehicle.year} ${vehicle.manufacturer} ${vehicle.model}`} imageCount={vehicle.imageCount} />
         </div>
 
         {/* Key Specs Row */}
